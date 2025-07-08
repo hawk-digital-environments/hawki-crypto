@@ -6,7 +6,6 @@ namespace Hawk\HawkiCrypto;
 
 
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
-use phpseclib3\Crypt\Random;
 
 readonly class SymmetricCrypto
 {
@@ -16,7 +15,7 @@ readonly class SymmetricCrypto
      */
     public function generatePassphrase(): string
     {
-        return bin2hex(Random::string(32));
+        return bin2hex(random_bytes(32));
     }
 
     /**

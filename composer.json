@@ -13,8 +13,7 @@
   "minimum-stability": "stable",
   "require": {
     "php": "^8.2",
-    "ext-openssl": "*",
-    "phpseclib/phpseclib": "^3.0"
+    "ext-openssl": "*"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",

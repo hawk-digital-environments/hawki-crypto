@@ -7,8 +7,6 @@ namespace Hawk\HawkiCrypto;
 
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
-use phpseclib3\Crypt\RSA;
-use phpseclib3\Crypt\RSA\PublicKey;
 
 readonly class AsymmetricCrypto
 {
@@ -19,13 +17,18 @@ readonly class AsymmetricCrypto
      */
     public function generateKeypair(): AsymmetricKeypair
     {
-        $privateKey = RSA::createKey(4096);
-        $publicKey = $privateKey->getPublicKey();
+        $privateKeyRes = openssl_pkey_new([
+            'private_key_bits' => 4096,
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+        ]);
 
-        $publicKeyString = $publicKey->toString('PKCS8');
+        openssl_pkey_export($privateKeyRes, $privateKeyString);
+        $privateKeyEncoded = base64_encode($privateKeyString);
+        $keyDetails = openssl_pkey_get_details($privateKeyRes);
+        $publicKeyString = $keyDetails['key'];
 
         return new AsymmetricKeypair(
-            privateKey: base64_encode($privateKey->toString('PKCS8')),
+            privateKey: $privateKeyEncoded,
             publicKey: new AsymmetricPublicKey(
                 server: base64_encode($publicKeyString),
                 web: preg_replace('~-+BEGIN PUBLIC KEY-+|-+END PUBLIC KEY-+|\s~', '', $publicKeyString)
@@ -43,9 +46,9 @@ readonly class AsymmetricCrypto
      */
     public function encrypt(string $plaintext, AsymmetricPublicKey $publicKey): string
     {
-        /** @var PublicKey $rsa */
-        $rsa = RSA::load(base64_decode($publicKey->server));
-        return base64_encode($rsa->encrypt($plaintext));
+        $pubKey = openssl_pkey_get_public(base64_decode($publicKey->server));
+        openssl_public_encrypt($plaintext, $encrypted, $pubKey);
+        return base64_encode($encrypted);
     }
 
     /**
@@ -62,8 +65,8 @@ readonly class AsymmetricCrypto
         string $privateKey
     ): string
     {
-        /** @var RSA\PrivateKey $rsa */
-        $rsa = RSA::load(base64_decode($privateKey));
-        return $rsa->decrypt(base64_decode($data));
+        $privKey = openssl_pkey_get_private(base64_decode($privateKey));
+        openssl_private_decrypt(base64_decode($data), $decrypted, $privKey);
+        return $decrypted;
     }
 }
