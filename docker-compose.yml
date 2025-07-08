@@ -1,0 +1,16 @@
+services:
+  app:
+    container_name: ${PROJECT_NAME}-crypto-php
+    image: ${PROJECT_NAME}-php:dev
+    build:
+      context: .
+      target: php_dev
+      args:
+        - DOCKER_RUNTIME=${DOCKER_RUNTIME:-docker}
+        - DOCKER_GID=${DOCKER_GID:-1000}
+        - DOCKER_UID=${DOCKER_UID:-1000}
+    restart: no
+    volumes:
+      - ./:/var/www/html
+    extra_hosts:
+      - host.docker.internal:host-gateway
