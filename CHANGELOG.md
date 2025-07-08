@@ -1,3 +1,12 @@
+# [0.3.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.2.0...v0.3.0) (2025-07-08)
+
+
+### Features
+
+* add dedicated exception on openssl errors ([0cac268](https://github.com/hawk-digital-environments/hawki-crypto/commit/0cac268d6ff1bdd01b56b8e8f226145bd0071e95))
+
+
+
 # [0.2.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.1.0...v0.2.0) (2025-07-08)
 
 

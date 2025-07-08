@@ -3,7 +3,7 @@
   "description": "The shared cryptographic module of HAWKI, providing secure encryption and decryption functionalities.",
   "type": "library",
   "license": "MIT",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "autoload": {
     "psr-4": {
       "Hawk\\HawkiCrypto\\": "src/",
