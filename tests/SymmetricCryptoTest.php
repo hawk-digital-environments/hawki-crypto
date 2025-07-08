@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Hawk\HawkiCrypto\Tests;
 
+use Hawk\HawkiCrypto\Exception\OpensslCryptoActionException;
+use Hawk\HawkiCrypto\OpenSsl;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(OpensslCryptoActionException::class)]
 #[CoversClass(SymmetricCrypto::class)]
 class SymmetricCryptoTest extends TestCase
 {
@@ -42,4 +45,33 @@ class SymmetricCryptoTest extends TestCase
         $this->assertSame($plaintext, $decrypted);
     }
 
+    public function testItFailsToEncryptOnOpenSslError(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $openSsl = $this->createMock(OpenSsl::class);
+        $openSsl->method('encrypt')
+            ->willReturn(false);
+        $sut = new SymmetricCrypto($openSsl);
+        $sut->encrypt(
+            plaintext: 'This is a test message.',
+            passphrase: 'invalid-passphrase'
+        );
+    }
+
+    public function testItFailsToDecryptOnOpenSslError(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $openSsl = $this->createMock(OpenSsl::class);
+        $openSsl->method('decrypt')
+            ->willReturn(false);
+        $sut = new SymmetricCrypto($openSsl);
+        $sut->decrypt(
+            value: new SymmetricCryptoValue(
+                iv: random_bytes(12),
+                tag: random_bytes(16),
+                ciphertext: 'invalid-ciphertext'
+            ),
+            passphrase: 'invalid-passphrase'
+        );
+    }
 }

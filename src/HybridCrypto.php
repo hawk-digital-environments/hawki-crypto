@@ -11,11 +11,16 @@ use Hawk\HawkiCrypto\Value\HybridCryptoValue;
 
 readonly class HybridCrypto
 {
+    protected SymmetricCrypto $symmetricCrypto;
+    protected AsymmetricCrypto $asymmetricCrypto;
+
     public function __construct(
-        protected SymmetricCrypto  $symmetricCrypto,
-        protected AsymmetricCrypto $asymmetricCrypto
+        ?SymmetricCrypto  $symmetricCrypto = null,
+        ?AsymmetricCrypto $asymmetricCrypto = null
     )
     {
+        $this->symmetricCrypto = $symmetricCrypto ?? new SymmetricCrypto();
+        $this->asymmetricCrypto = $asymmetricCrypto ?? new AsymmetricCrypto();
     }
 
     /**

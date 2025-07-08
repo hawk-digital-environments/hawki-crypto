@@ -5,10 +5,18 @@ declare(strict_types=1);
 namespace Hawk\HawkiCrypto;
 
 
+use Hawk\HawkiCrypto\Exception\OpensslCryptoActionException;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 
 readonly class SymmetricCrypto
 {
+    protected OpenSsl $openSsl;
+
+    public function __construct(?OpenSsl $openssl = null)
+    {
+        $this->openSsl = $openssl ?? new OpenSsl();
+    }
+
     /**
      * Generates a random passphrase for symmetric encryption.
      * @return string
@@ -34,7 +42,7 @@ readonly class SymmetricCrypto
     {
         $plaintext = base64_encode($plaintext);
         $iv = random_bytes(12);
-        $ciphertext = openssl_encrypt(
+        $ciphertext = $this->openSsl->encrypt(
             $plaintext,
             'aes-256-gcm',
             $passphrase,
@@ -42,6 +50,10 @@ readonly class SymmetricCrypto
             $iv,
             $tag
         );
+
+        if($ciphertext === false){
+            throw OpensslCryptoActionException::createForEncryption();
+        }
 
         return new SymmetricCryptoValue(
             iv: $iv,
@@ -64,7 +76,7 @@ readonly class SymmetricCrypto
         string               $passphrase
     ): string
     {
-        $decrypted = openssl_decrypt(
+        $decrypted = $this->openSsl->decrypt(
             $value->ciphertext,
             'aes-256-gcm',
             $passphrase,
@@ -72,6 +84,10 @@ readonly class SymmetricCrypto
             $value->iv,
             $value->tag
         );
+
+        if($decrypted === false){
+            throw OpensslCryptoActionException::createForDecryption();
+        }
 
         return base64_decode($decrypted);
     }

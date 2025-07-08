@@ -6,11 +6,14 @@ namespace Hawk\HawkiCrypto\Tests;
 
 
 use Hawk\HawkiCrypto\AsymmetricCrypto;
+use Hawk\HawkiCrypto\Exception\OpensslCryptoActionException;
+use Hawk\HawkiCrypto\OpenSsl;
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(OpensslCryptoActionException::class)]
 #[CoversClass(AsymmetricCrypto::class)]
 class AsymmetricCryptoTest extends TestCase
 {
@@ -29,6 +32,28 @@ class AsymmetricCryptoTest extends TestCase
         );
     }
 
+    public function testItFailsToGenerateAKeypairIfOpenSslCanNotCreatePkey(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $openSsl = $this->createMock(OpenSsl::class);
+        $openSsl->method('pkey_new')
+            ->willReturn(false);
+        $sut = new AsymmetricCrypto($openSsl);
+        $sut->generateKeypair();
+    }
+
+    public function testItFailsToGenerateAKeypairIfOpenSslCanNotExportPkey(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $openSsl = $this->createMock(OpenSsl::class);
+        $openSsl->method('pkey_new')
+            ->willReturn(true);
+        $openSsl->method('pkey_export')
+            ->willReturn(false);
+        $sut = new AsymmetricCrypto($openSsl);
+        $sut->generateKeypair();
+    }
+
     public function testItCanEncryptAndDecrypt(): void
     {
         $sut = new AsymmetricCrypto();
@@ -43,11 +68,61 @@ class AsymmetricCryptoTest extends TestCase
         $this->assertNotEmpty($encrypted);
 
         $decrypted = $sut->decrypt(
-            data: $encrypted,
+            ciphertext: $encrypted,
             privateKey: $keypair->privateKey
         );
 
         $this->assertSame($plaintext, $decrypted);
+    }
+
+    public function testItFailsToEncryptIfOpenSslCanNotGetPublicKey(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $sut = new AsymmetricCrypto();
+        $sut->encrypt(
+            plaintext: 'This is a test message.',
+            publicKey: new AsymmetricPublicKey('invalid-public-key', 'invalid-public-key-web')
+        );
+    }
+
+    public function testItFailsToEncryptOnOpenSslError(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $openSsl = $this->createMock(OpenSsl::class);
+        $openSsl->method('pkey_get_public')
+            ->willReturn(true);
+        $openSsl->method('public_encrypt')
+            ->willReturn(false);
+        $sut = new AsymmetricCrypto($openSsl);
+        $sut->encrypt(
+            plaintext: 'This is a test message.',
+            publicKey: new AsymmetricPublicKey('invalid-public-key', 'invalid-public-key-web')
+        );
+    }
+
+    public function testItFailsToDecryptIfOpenSslCanNotGetPrivateKey(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $sut = new AsymmetricCrypto();
+        $sut->decrypt(
+            ciphertext: 'This is a test message.',
+            privateKey: 'invalid-private-key'
+        );
+    }
+
+    public function testItFailsToDecryptOnOpenSslError(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $openSsl = $this->createMock(OpenSsl::class);
+        $openSsl->method('pkey_get_private')
+            ->willReturn(true);
+        $openSsl->method('private_decrypt')
+            ->willReturn(false);
+        $sut = new AsymmetricCrypto($openSsl);
+        $sut->decrypt(
+            ciphertext: 'This is a test message.',
+            privateKey: 'invalid-private-key'
+        );
     }
 
 }

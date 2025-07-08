@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hawk\HawkiCrypto\Tests;
 
 
+use Hawk\HawkiCrypto\Exception\InvalidNumberOfStringPartsException;
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -53,5 +54,13 @@ class AsymmetricKeypairTest extends TestCase
     {
         $json = json_encode($this->sut);
         $this->assertSame('"cHJpdmF0ZS1rZXk=|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0="', $json);
+    }
+
+    public function testItFailsToBeCreatedFromStringWithNotEnoughParts(): void
+    {
+        $this->expectException(InvalidNumberOfStringPartsException::class);
+        AsymmetricKeypair::fromString(
+            'asdf'
+        );
     }
 }
