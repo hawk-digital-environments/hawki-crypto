@@ -57,4 +57,22 @@ class SymmetricCryptoValueTest extends TestCase
         $json = json_encode($sut);
         $this->assertSame('"aXYtdmFsdWU=|dGFnLXZhbHVl|Y2lwaGVydGV4dC12YWx1ZQ=="', $json);
     }
+
+    public function testItCanBeCreatedFromLegacyValueString(): void
+    {
+        $iv = 'iv';
+        $tag = 'tag';
+        $ciphertext = 'ciphertext-value';
+        $sut = SymmetricCryptoValue::fromString(
+            (string)(new SymmetricCryptoValue(
+                iv: base64_encode($iv),
+                tag: base64_encode($tag),
+                ciphertext: base64_encode($ciphertext)
+            ))
+        );
+        $this->assertInstanceOf(SymmetricCryptoValue::class, $sut);
+        $this->assertSame($iv, $sut->iv);
+        $this->assertSame($tag, $sut->tag);
+        $this->assertSame($ciphertext, $sut->ciphertext);
+    }
 }
