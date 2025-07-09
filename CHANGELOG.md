@@ -1,3 +1,7 @@
+## [0.5.1](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.5.0...v0.5.1) (2025-07-09)
+
+
+
 # [0.5.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.4.0...v0.5.0) (2025-07-09)
 
 
@@ -31,15 +35,6 @@
 ### Features
 
 * add dedicated exception on openssl errors ([0cac268](https://github.com/hawk-digital-environments/hawki-crypto/commit/0cac268d6ff1bdd01b56b8e8f226145bd0071e95))
-
-
-
-# [0.2.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.1.0...v0.2.0) (2025-07-08)
-
-
-### Features
-
-* replace phpseclib3 with features of ext-openssl ([9a7e959](https://github.com/hawk-digital-environments/hawki-crypto/commit/9a7e9596d0c17326492e0e8858e48114576d472a))
 
 
 
