@@ -21,13 +21,6 @@ class OpensslCryptoActionException extends \RuntimeException implements HawkiCry
         );
     }
 
-    public static function createForGeneric(string $message): self
-    {
-        return new self(
-            $message . ' ' . self::collectReasonString(),
-        );
-    }
-
     protected static function collectReasonString(): string
     {
         $reasons = [];

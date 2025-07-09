@@ -27,14 +27,6 @@ class OpenSsl
     }
 
     /**
-     * @see openssl_pkey_get_details()
-     */
-    public function pkey_get_details($key)
-    {
-        return openssl_pkey_get_details($key);
-    }
-
-    /**
      * @see openssl_pkey_get_public()
      */
     public function pkey_get_public($public_key)

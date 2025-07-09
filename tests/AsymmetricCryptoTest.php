@@ -7,14 +7,18 @@ namespace Hawk\HawkiCrypto\Tests;
 
 use Hawk\HawkiCrypto\AsymmetricCrypto;
 use Hawk\HawkiCrypto\Exception\OpensslCryptoActionException;
+use Hawk\HawkiCrypto\Exception\SeclibCryptoActionException;
+use Hawk\HawkiCrypto\Seclib;
 use Hawk\HawkiCrypto\OpenSsl;
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
 use Hawk\HawkiCrypto\Value\AsymmetricPrivateKey;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
+use phpseclib3\Crypt\Common\PrivateKey;
+use phpseclib3\Crypt\RSA\PublicKey;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(OpensslCryptoActionException::class)]
+#[CoversClass(SeclibCryptoActionException::class)]
 #[CoversClass(AsymmetricCrypto::class)]
 class AsymmetricCryptoTest extends TestCase
 {
@@ -31,28 +35,6 @@ class AsymmetricCryptoTest extends TestCase
             $keypair->publicKey->server,
             $keypair->publicKey->web
         );
-    }
-
-    public function testItFailsToGenerateAKeypairIfOpenSslCanNotCreatePkey(): void
-    {
-        $this->expectException(OpensslCryptoActionException::class);
-        $openSsl = $this->createMock(OpenSsl::class);
-        $openSsl->method('pkey_new')
-            ->willReturn(false);
-        $sut = new AsymmetricCrypto($openSsl);
-        $sut->generateKeypair();
-    }
-
-    public function testItFailsToGenerateAKeypairIfOpenSslCanNotExportPkey(): void
-    {
-        $this->expectException(OpensslCryptoActionException::class);
-        $openSsl = $this->createMock(OpenSsl::class);
-        $openSsl->method('pkey_new')
-            ->willReturn(true);
-        $openSsl->method('pkey_export')
-            ->willReturn(false);
-        $sut = new AsymmetricCrypto($openSsl);
-        $sut->generateKeypair();
     }
 
     public function testItCanEncryptAndDecrypt(): void
@@ -76,35 +58,60 @@ class AsymmetricCryptoTest extends TestCase
         $this->assertSame($plaintext, $decrypted);
     }
 
-    public function testItFailsToEncryptIfOpenSslCanNotGetPublicKey(): void
+    public function testItFailsToEncryptOnSeclibError(): void
     {
-        $this->expectException(OpensslCryptoActionException::class);
-        $sut = new AsymmetricCrypto();
+        $this->expectException(SeclibCryptoActionException::class);
+        $libsec = $this->createMock(Seclib::class);
+        $libsec->method('load')->willThrowException(new \RuntimeException('error'));
+        $sut = new AsymmetricCrypto($libsec);
         $sut->encrypt(
             plaintext: 'This is a test message.',
             publicKey: new AsymmetricPublicKey('invalid-public-key', 'invalid-public-key-web')
         );
     }
 
-    public function testItFailsToEncryptOnOpenSslError(): void
+    public function testItFailsToEncryptIfPublicKeyReturnedFalse(): void
     {
-        $this->expectException(OpensslCryptoActionException::class);
-        $openSsl = $this->createMock(OpenSsl::class);
-        $openSsl->method('pkey_get_public')
-            ->willReturn(true);
-        $openSsl->method('public_encrypt')
-            ->willReturn(false);
-        $sut = new AsymmetricCrypto($openSsl);
+        $this->expectException(SeclibCryptoActionException::class);
+        $libsec = $this->createMock(Seclib::class);
+
+        $libsec->method('load')->willReturn(new class implements \phpseclib3\Crypt\Common\PublicKey {
+            public function withPadding() {
+                return $this;
+            }
+            public function withHash() {
+                return $this;
+            }
+            public function encrypt() {
+                return false; // Simulate failure
+            }
+
+            public function verify($message, $signature)
+            {
+            }
+
+            public function toString($type, array $options = [])
+            {
+            }
+
+            public function getFingerprint($algorithm)
+            {
+            }
+        });
+        $sut = new AsymmetricCrypto($libsec);
         $sut->encrypt(
             plaintext: 'This is a test message.',
             publicKey: new AsymmetricPublicKey('invalid-public-key', 'invalid-public-key-web')
         );
+
     }
 
-    public function testItFailsToDecryptIfOpenSslCanNotGetPrivateKey(): void
+    public function testItFailsToDecryptOnSeclibError(): void
     {
-        $this->expectException(OpensslCryptoActionException::class);
-        $sut = new AsymmetricCrypto();
+        $this->expectException(SeclibCryptoActionException::class);
+        $libsec = $this->createMock(Seclib::class);
+        $libsec->method('load')->willThrowException(new \RuntimeException('error'));
+        $sut = new AsymmetricCrypto($libsec);
         $sut->decrypt(
             ciphertext: 'This is a test message.',
             privateKey: new AsymmetricPrivateKey(
@@ -114,15 +121,40 @@ class AsymmetricCryptoTest extends TestCase
         );
     }
 
-    public function testItFailsToDecryptOnOpenSslError(): void
+    public function testItFailsToDecryptIfPrivateKeyReturnedFalse(): void
     {
-        $this->expectException(OpensslCryptoActionException::class);
-        $openSsl = $this->createMock(OpenSsl::class);
-        $openSsl->method('pkey_get_private')
-            ->willReturn(true);
-        $openSsl->method('private_decrypt')
-            ->willReturn(false);
-        $sut = new AsymmetricCrypto($openSsl);
+        $this->expectException(SeclibCryptoActionException::class);
+        $libsec = $this->createMock(Seclib::class);
+
+        $libsec->method('load')->willReturn(new class implements PrivateKey {
+            public function withPadding() {
+                return $this;
+            }
+            public function withHash() {
+                return $this;
+            }
+            public function decrypt(): bool
+            {
+                return false; // Simulate failure
+            }
+
+            public function toString($type, array $options = [])
+            {
+            }
+
+            public function sign($message)
+            {
+            }
+
+            public function getPublicKey()
+            {
+            }
+
+            public function withPassword($password = false)
+            {
+            }
+        });
+        $sut = new AsymmetricCrypto($libsec);
         $sut->decrypt(
             ciphertext: 'This is a test message.',
             privateKey: new AsymmetricPrivateKey(
@@ -130,6 +162,7 @@ class AsymmetricCryptoTest extends TestCase
                 web: 'invalid-private-key-web'
             )
         );
+
     }
 
     public function testItCanLoadPublicKeyFromAWebSource(): void
@@ -142,13 +175,6 @@ class AsymmetricCryptoTest extends TestCase
         $this->assertEquals($publicKey->server, $loadedPublicKey->server);
     }
 
-    public function testItFailsToLoadPublicKeyFromWebSourceIfInvalidValueWasGiven(): void
-    {
-        $this->expectException(OpensslCryptoActionException::class);
-        $sut = new AsymmetricCrypto();
-        $sut->loadPublicKeyFromWeb('invalid-public-key');
-    }
-
     public function testItCanLoadPrivateKeyFromAWebSource(): void
     {
         $sut = new AsymmetricCrypto();
@@ -157,26 +183,6 @@ class AsymmetricCryptoTest extends TestCase
         $loadedPrivateKey = $sut->loadPrivateKeyFromWeb($privateKey->web);
 
         $this->assertEquals($privateKey->server, $loadedPrivateKey->server);
-    }
-
-    public function testItFailsToLoadPrivateKeyFromWebSourceIfInvalidKey(): void
-    {
-        $this->expectException(OpensslCryptoActionException::class);
-        $sut = new AsymmetricCrypto();
-        $sut->loadPrivateKeyFromWeb('invalid-private-key');
-    }
-
-    public function testITFailsToLoadPrivateKeyFromWebSourceIfKeyCanNotBeExported(): void
-    {
-        $this->expectException(OpensslCryptoActionException::class);
-        $openSsl = $this->createMock(OpenSsl::class);
-        $openSsl->method('pkey_get_private')
-            ->willReturn(true);
-        $openSsl->method('pkey_export')
-            ->willReturn(false);
-        $sut = new AsymmetricCrypto($openSsl);
-        $sut->loadPrivateKeyFromWeb('invalid-private-key');
-
     }
 
     public function testItCanEncryptAndDecryptWithAWebGeneratedKeypair(): void

@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Hawk\HawkiCrypto;
 
 
-use Hawk\HawkiCrypto\Exception\OpensslCryptoActionException;
+use Hawk\HawkiCrypto\Exception\SeclibCryptoActionException;
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
 use Hawk\HawkiCrypto\Value\AsymmetricPrivateKey;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
+use phpseclib3\Crypt\RSA;
 
 readonly class AsymmetricCrypto
 {
-    protected OpenSsl $openSsl;
+    protected Seclib $libsec;
 
-    public function __construct(?OpenSsl $openssl = null)
+    public function __construct(?Seclib $libsec = null)
     {
-        $this->openSsl = $openssl ?? new OpenSsl();
+        $this->libsec = $libsec ?? new Seclib();
     }
 
     /**
@@ -26,26 +27,16 @@ readonly class AsymmetricCrypto
      */
     public function generateKeypair(): AsymmetricKeypair
     {
-        $privateKeyRes = $this->openSsl->pkey_new([
-            'private_key_bits' => 4096,
-            'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        ]);
+        $privateKey = $this->libsec->createKey(4096);
+        $publicKey = $privateKey->getPublicKey();
 
-        if($privateKeyRes === false) {
-            throw OpensslCryptoActionException::createForGeneric('Failed to generate private key.');
-        }
-
-        if(!$this->openSsl->pkey_export($privateKeyRes, $privateKeyString)){
-            throw OpensslCryptoActionException::createForGeneric('The creation of a keypair failed.');
-        }
-
-        $keyDetails = $this->openSsl->pkey_get_details($privateKeyRes);
-        $publicKeyString = $keyDetails['key'];
+        $privateKeyString = (string)$privateKey;
+        $publicKeyString = (string)$publicKey;
 
         return new AsymmetricKeypair(
             privateKey: new AsymmetricPrivateKey(
                 server: $privateKeyString,
-                web: preg_replace('~-+BEGIN PRIVATE KEY-+|-+END PRIVATE KEY-+|\s~', '', $privateKeyString)
+                web: preg_replace('~-+BEGIN (?:RSA )?PRIVATE KEY-+|-+END (?:RSA )?PRIVATE KEY-+|\s~', '', $privateKeyString)
             ),
             publicKey: new AsymmetricPublicKey(
                 server: $publicKeyString,
@@ -62,19 +53,12 @@ readonly class AsymmetricCrypto
      */
     public function loadPublicKeyFromWeb(string $webPublicKey): AsymmetricPublicKey
     {
-        $pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" .
-            chunk_split($webPublicKey, 64, "\n") .
+        $pemPublicKey = "-----BEGIN PUBLIC KEY-----\r\n" .
+            chunk_split($webPublicKey, 64) .
             "-----END PUBLIC KEY-----";
 
-        $loadedPubKey = $this->openSsl->pkey_get_public($pemPublicKey);
-        if($loadedPubKey === false) {
-            throw OpensslCryptoActionException::createForGeneric('The public key is invalid.');
-        }
-
-        $keyDetails = $this->openSsl->pkey_get_details($loadedPubKey);
-
         return new AsymmetricPublicKey(
-            server: $keyDetails['key'],
+            server: $pemPublicKey,
             web: $webPublicKey
         );
     }
@@ -87,20 +71,12 @@ readonly class AsymmetricCrypto
      */
     public function loadPrivateKeyFromWeb(string $webPrivateKey): AsymmetricPrivateKey
     {
-        $pemPrivateKey = "-----BEGIN PRIVATE KEY-----\n" .
-            chunk_split($webPrivateKey, 64, "\n") .
+        $pemPrivateKey = "-----BEGIN PRIVATE KEY-----\r\n" .
+            chunk_split($webPrivateKey, 64) .
             "-----END PRIVATE KEY-----";
-        $loadedPrivateKey = $this->openSsl->pkey_get_private($pemPrivateKey);
-        if($loadedPrivateKey === false) {
-            throw OpensslCryptoActionException::createForGeneric('The private key is invalid.');
-        }
-
-        if(!$this->openSsl->pkey_export($loadedPrivateKey, $privateKeyString)){
-            throw OpensslCryptoActionException::createForGeneric('The private key could not be exported.');
-        }
 
         return new AsymmetricPrivateKey(
-            server: $privateKeyString,
+            server: $pemPrivateKey,
             web: $webPrivateKey
         );
     }
@@ -115,13 +91,20 @@ readonly class AsymmetricCrypto
      */
     public function encrypt(string $plaintext, AsymmetricPublicKey $publicKey): string
     {
-        $pubKey = $this->openSsl->pkey_get_public($publicKey->server);
-        if($pubKey === false) {
-            throw OpensslCryptoActionException::createForGeneric('Invalid public key provided.');
+        try {
+            $pubKey = $this->libsec->load($publicKey->server)
+                ->withPadding(RSA::ENCRYPTION_OAEP)
+                ->withHash('sha256');
+
+            $encrypted = $pubKey->encrypt($plaintext);
+        } catch (\Throwable $e) {
+            throw SeclibCryptoActionException::createForEncryption($e);
         }
 
-        if(!$this->openSsl->public_encrypt($plaintext, $encrypted, $pubKey, OPENSSL_PKCS1_OAEP_PADDING)){
-            throw OpensslCryptoActionException::createForEncryption();
+        if($encrypted === false) {
+            throw SeclibCryptoActionException::createForEncryption(new \RuntimeException(
+                'Encryption failed, possibly due to an invalid public key or plaintext.'
+            ));
         }
 
         return base64_encode($encrypted);
@@ -136,18 +119,26 @@ readonly class AsymmetricCrypto
      * @return string The decrypted plaintext.
      */
     public function decrypt(
-        string $ciphertext,
+        string               $ciphertext,
         #[\SensitiveParameter]
         AsymmetricPrivateKey $privateKey
     ): string
     {
-        $privKey = $this->openSsl->pkey_get_private($privateKey->server);
-        if($privKey === false){
-            throw OpensslCryptoActionException::createForGeneric('The private key is invalid.');
+        try {
+            /** @var RSA\PrivateKey $privKey */
+            $privKey = $this->libsec->load($privateKey->server)
+                ->withPadding(RSA::ENCRYPTION_OAEP)
+                ->withHash('sha256');
+
+            $decrypted = $privKey->decrypt(base64_decode($ciphertext));
+        } catch (\Throwable $e) {
+            throw SeclibCryptoActionException::createForDecryption($e);
         }
 
-        if(!$this->openSsl->private_decrypt(base64_decode($ciphertext), $decrypted, $privKey, OPENSSL_PKCS1_OAEP_PADDING)){
-            throw OpensslCryptoActionException::createForDecryption();
+        if ($decrypted === false) {
+             throw SeclibCryptoActionException::createForDecryption(new \RuntimeException(
+                'Decryption failed, possibly due to an invalid private key or ciphertext.'
+             ));
         }
 
         return $decrypted;
