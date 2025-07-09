@@ -1,3 +1,12 @@
+## [0.5.2](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.5.1...v0.5.2) (2025-07-09)
+
+
+### Bug Fixes
+
+* **SymmetricCrypto:** ensure passphrase compatibility with web crypto ([ed47e97](https://github.com/hawk-digital-environments/hawki-crypto/commit/ed47e97bff9343f82d6a25827528f7e024d746f7))
+
+
+
 ## [0.5.1](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.5.0...v0.5.1) (2025-07-09)
 
 
@@ -26,15 +35,6 @@
 ### Bug Fixes
 
 * **SymmetricCrypto:** do not base64 encode symmetric value before encryption ([3f83d81](https://github.com/hawk-digital-environments/hawki-crypto/commit/3f83d811fcecc2306579bdc5f33dc16980883240))
-
-
-
-# [0.3.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.2.0...v0.3.0) (2025-07-08)
-
-
-### Features
-
-* add dedicated exception on openssl errors ([0cac268](https://github.com/hawk-digital-environments/hawki-crypto/commit/0cac268d6ff1bdd01b56b8e8f226145bd0071e95))
 
 
 
