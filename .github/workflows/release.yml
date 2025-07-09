@@ -63,4 +63,5 @@ jobs:
       - uses: TriPSs/conventional-changelog-action@v5
         with:
           version-file: './composer.json'
+          skip-on-empty: 'false'
           github-token: ${{ secrets.github_token }}
