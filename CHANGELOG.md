@@ -1,3 +1,12 @@
+## [0.3.1](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.3.0...v0.3.1) (2025-07-09)
+
+
+### Bug Fixes
+
+* **SymmetricCrypto:** do not base64 encode symmetric value before encryption ([3f83d81](https://github.com/hawk-digital-environments/hawki-crypto/commit/3f83d811fcecc2306579bdc5f33dc16980883240))
+
+
+
 # [0.3.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.2.0...v0.3.0) (2025-07-08)
 
 
