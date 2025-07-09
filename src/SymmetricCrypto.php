@@ -23,7 +23,7 @@ readonly class SymmetricCrypto
      */
     public function generatePassphrase(): string
     {
-        return bin2hex(random_bytes(32));
+        return random_bytes(32);
     }
 
     /**

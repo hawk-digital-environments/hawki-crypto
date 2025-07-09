@@ -21,7 +21,7 @@ class SymmetricCryptoTest extends TestCase
         $passphrase = $sut->generatePassphrase();
         $this->assertIsString($passphrase);
         $this->assertNotEmpty($passphrase);
-        $this->assertEquals(64, strlen($passphrase));
+        $this->assertEquals(32, strlen($passphrase));
     }
 
     public function testItCanEncryptAndDecrypt(): void
