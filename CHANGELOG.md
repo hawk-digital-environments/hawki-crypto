@@ -1,3 +1,12 @@
+# [0.4.0](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.3.1...v0.4.0) (2025-07-09)
+
+
+### Features
+
+* **AsymmetricCrypto:** add helper to load web created public keys ([9a601db](https://github.com/hawk-digital-environments/hawki-crypto/commit/9a601dbcc1a5089bb489f710a1ed0444254a4a19))
+
+
+
 ## [0.3.1](https://github.com/hawk-digital-environments/hawki-crypto/compare/v0.3.0...v0.3.1) (2025-07-09)
 
 
