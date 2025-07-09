@@ -28,7 +28,6 @@ readonly class SymmetricCrypto
 
     /**
      * Encrypts the given data using AES-256-GCM symmetric encryption.
-     * The data is first base64 encoded to ensure it is in a suitable format for encryption.
      *
      * @param string $plaintext The data to encrypt.
      * @param string $passphrase The passphrase used for encryption.
@@ -40,7 +39,6 @@ readonly class SymmetricCrypto
         string $passphrase
     ): SymmetricCryptoValue
     {
-        $plaintext = base64_encode($plaintext);
         $iv = random_bytes(12);
         $ciphertext = $this->openSsl->encrypt(
             $plaintext,
@@ -89,6 +87,6 @@ readonly class SymmetricCrypto
             throw OpensslCryptoActionException::createForDecryption();
         }
 
-        return base64_decode($decrypted);
+        return $decrypted;
     }
 }
