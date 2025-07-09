@@ -125,4 +125,29 @@ class AsymmetricCryptoTest extends TestCase
         );
     }
 
+    public function testItCanLoadPublicKeyFromAWebSource(): void
+    {
+        $sut = new AsymmetricCrypto();
+        $publicKey = $sut->generateKeypair()->publicKey;
+
+        $loadedPublicKey = $sut->loadPublicKeyFromWeb($publicKey->web);
+
+        $this->assertEquals($publicKey->server, $loadedPublicKey->server);
+    }
+
+    public function testItCanLoadPublicKeyFromAWebGeneratedPublicKey(): void
+    {
+        $publicKey = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz5PreZPEbbPfEG6VPUk5P9plLhfu6AczKlaxLdqmxmus/89WAYBLuF9TcDQFvu0suQhQqQXm6kM5jjfW5CX3+wpwA8CiOZ+xRAxpPtVV+93c+gmW03EcXv0m4dJPmjj7Kog8xLqbzfhDfu4+6+3wU4uOwyoDEJvilH5p67hgJppC7vq3vMe04EeulvNKcGqMCogLXCzwPEMiAvKlu41eSzArxG3vhg0n3xTkudkqTIIZfGjZzQdrdLwa1d+622WjiH6rph/AARB7OOJ0X2c1ghzTFN5b+Oa58tDBbRyhHqknpeS9vD71N3SRASNHesIoukKbQwRblcLpGVlLkaZ0hQIDAQAB';
+        $sut = new AsymmetricCrypto();
+        $loadedPublicKey = $sut->loadPublicKeyFromWeb($publicKey);
+        $this->assertequals($publicKey, $loadedPublicKey->web);
+    }
+
+    public function testItFailsToLoadPublicKeyFromWebSourceIfInvalidValueWasGiven(): void
+    {
+        $this->expectException(OpensslCryptoActionException::class);
+        $sut = new AsymmetricCrypto();
+        $sut->loadPublicKeyFromWeb('invalid-public-key');
+    }
+
 }

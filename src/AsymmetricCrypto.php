@@ -52,6 +52,30 @@ readonly class AsymmetricCrypto
     }
 
     /**
+     * This method loads a public key from a string that has been created in a browser context.
+     * @param string $webPublicKey
+     * @return AsymmetricPublicKey
+     */
+    public function loadPublicKeyFromWeb(string $webPublicKey): AsymmetricPublicKey
+    {
+        $pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" .
+            chunk_split($webPublicKey, 64, "\n") .
+            "-----END PUBLIC KEY-----";
+
+        $loadedPubKey = $this->openSsl->pkey_get_public($pemPublicKey);
+        if($loadedPubKey === false) {
+            throw OpensslCryptoActionException::createForGeneric('The public key is invalid.');
+        }
+
+        $keyDetails = $this->openSsl->pkey_get_details($loadedPubKey);
+
+        return new AsymmetricPublicKey(
+            server: base64_encode($keyDetails['key']),
+            web: $webPublicKey
+        );
+    }
+
+    /**
      * Encrypts data using the provided public key.
      * This method uses the RSA public key to encrypt the data.
      *
