@@ -6,6 +6,7 @@ namespace Hawk\HawkiCrypto;
 
 
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
+use Hawk\HawkiCrypto\Value\AsymmetricPrivateKey;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use Hawk\HawkiCrypto\Value\HybridCryptoValue;
 
@@ -55,10 +56,10 @@ readonly class HybridCrypto
      * This method first decrypts the passphrase using the private key, then uses that passphrase to decrypt the symmetric value.
      *
      * @param HybridCryptoValue $value
-     * @param string $privateKey
+     * @param AsymmetricPrivateKey $privateKey
      * @return string The decrypted data.
      */
-    public function decrypt(HybridCryptoValue $value, string $privateKey): string
+    public function decrypt(HybridCryptoValue $value, AsymmetricPrivateKey $privateKey): string
     {
         $passphrase = $this->asymmetricCrypto->decrypt($value->passphrase, $privateKey);
         return $this->symmetricCrypto->decrypt($value->value, $passphrase);

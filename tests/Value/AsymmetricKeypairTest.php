@@ -7,6 +7,7 @@ namespace Hawk\HawkiCrypto\Tests;
 
 use Hawk\HawkiCrypto\Exception\InvalidNumberOfStringPartsException;
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
+use Hawk\HawkiCrypto\Value\AsymmetricPrivateKey;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -19,7 +20,10 @@ class AsymmetricKeypairTest extends TestCase
     protected function setUp(): void
     {
         $this->sut = new AsymmetricKeypair(
-            privateKey: 'private-key',
+            privateKey: new AsymmetricPrivateKey(
+                server: 'server-private-key',
+                web: 'web-private-key'
+            ),
             publicKey: new AsymmetricPublicKey(
                 server: 'server-key',
                 web: 'web-key'
@@ -30,7 +34,7 @@ class AsymmetricKeypairTest extends TestCase
     public function testItCanBeConstructed(): void
     {
         $sut = new AsymmetricKeypair(
-            privateKey: 'private-key',
+            privateKey: $this->createStub(AsymmetricPrivateKey::class),
             publicKey: $this->createStub(AsymmetricPublicKey::class)
         );
         $this->assertInstanceOf(AsymmetricKeypair::class, $sut);
@@ -38,12 +42,12 @@ class AsymmetricKeypairTest extends TestCase
 
     public function testItCanBeConvertedToString(): void
     {
-        $this->assertSame('cHJpdmF0ZS1rZXk=|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0=', (string)$this->sut);
+        $this->assertSame('YzJWeWRtVnlMWEJ5YVhaaGRHVXRhMlY1fGQyVmlMWEJ5YVhaaGRHVXRhMlY1|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0=', (string)$this->sut);
     }
 
     public function testItCanBeCreatedFromString(): void
     {
-        $sut = AsymmetricKeypair::fromString('cHJpdmF0ZS1rZXk=|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0=');
+        $sut = AsymmetricKeypair::fromString('YzJWeWRtVnlMWEJ5YVhaaGRHVXRhMlY1fGQyVmlMWEJ5YVhaaGRHVXRhMlY1|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0=');
 
         $this->assertInstanceOf(AsymmetricKeypair::class, $sut);
         $this->assertSame('server-key', $sut->publicKey->server);
@@ -53,7 +57,7 @@ class AsymmetricKeypairTest extends TestCase
     public function testItCanBeJsonEncoded(): void
     {
         $json = json_encode($this->sut);
-        $this->assertSame('"cHJpdmF0ZS1rZXk=|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0="', $json);
+        $this->assertSame('"YzJWeWRtVnlMWEJ5YVhaaGRHVXRhMlY1fGQyVmlMWEJ5YVhaaGRHVXRhMlY1|YzJWeWRtVnlMV3RsZVE9PXxkMlZpTFd0bGVRPT0="', $json);
     }
 
     public function testItFailsToBeCreatedFromStringWithNotEnoughParts(): void

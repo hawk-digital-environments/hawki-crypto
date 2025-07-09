@@ -12,13 +12,13 @@ readonly class AsymmetricKeypair implements Stringable, \JsonSerializable
 {
     use StringableValueTrait;
 
-    public string $privateKey;
+    public AsymmetricPrivateKey $privateKey;
     public AsymmetricPublicKey $publicKey;
 
     public function __construct(
         #[\SensitiveParameter]
-        string              $privateKey,
-        AsymmetricPublicKey $publicKey
+        AsymmetricPrivateKey $privateKey,
+        AsymmetricPublicKey  $publicKey
     )
     {
         $this->privateKey = $privateKey;
@@ -27,7 +27,7 @@ readonly class AsymmetricKeypair implements Stringable, \JsonSerializable
 
     protected function toStringList(): array
     {
-        return [$this->privateKey, (string)$this->publicKey];
+        return [(string)$this->privateKey, (string)$this->publicKey];
     }
 
     protected static function fromStringList(string ...$values): static
@@ -37,7 +37,7 @@ readonly class AsymmetricKeypair implements Stringable, \JsonSerializable
         }
 
         return new static(
-            $values[0],
+            AsymmetricPrivateKey::fromString($values[0]),
             AsymmetricPublicKey::fromString($values[1])
         );
     }

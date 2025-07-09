@@ -9,6 +9,7 @@ use Hawk\HawkiCrypto\AsymmetricCrypto;
 use Hawk\HawkiCrypto\HybridCrypto;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Hawk\HawkiCrypto\Value\AsymmetricKeypair;
+use Hawk\HawkiCrypto\Value\AsymmetricPrivateKey;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use Hawk\HawkiCrypto\Value\HybridCryptoValue;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
@@ -84,7 +85,7 @@ class HybridCryptoTest extends TestCase
         $decryptedData = 'decrypted-data';
         $encryptedPassphrase = 'encrypted-passphrase';
         $passphrase = 'decrypted-passphrase';
-        $privateKey = 'private';
+        $privateKey = $this->createStub(AsymmetricPrivateKey::class);
         $symValue = $this->createStub(SymmetricCryptoValue::class);
 
         $value = new HybridCryptoValue(
